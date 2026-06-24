@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resultados DIT — Enero-Junio 2026</title>
+  <style>
+    :root {
+      --primary: #1f4e79;
+      --dev:     #1a6b3a;
+      --dev-light: #e8f5ee;
+      --infra-light: #f0f5fc;
+      --innov:   #5b1f8a;
+      --innov-light: #f3eafc;
+      --border:  #d7dee8;
+      --bg:      #eef2f6;
+      --text:    #1a1a1a;
+      --muted:   #666;
+      --success: #2e7d32;
+      --warning: #f57c00;
+      --danger:  #c62828;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    /* ── LOGIN ── */
+    .login-wrap {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg);
+    }
+    .login-card {
+      background: #fff; border-radius: 14px; box-shadow: 0 6px 28px rgba(0,0,0,.10);
+      padding: 40px 36px; width: 100%; max-width: 380px; text-align: center;
+    }
+    .login-card .lock { font-size: 44px; margin-bottom: 12px; }
+    .login-card h1 { font-size: 20px; color: var(--primary); margin: 0 0 6px; }
+    .login-card p  { font-size: 13px; color: var(--muted); margin: 0 0 24px; }
+    .login-card input[type="password"] {
+      width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 15px; margin-bottom: 14px; text-align: center; letter-spacing: 3px;
+    }
+    .login-card input[type="password"]:focus { outline: none; border-color: var(--primary); }
+    .btn-login {
+      width: 100%; background: var(--primary); color: #fff; border: none;
+      border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+    .btn-login:hover { background: #2a6099; }
+    .login-error { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+
+    /* ── DASHBOARD ── */
+    .dashboard { display: none; }
+    .top-bar {
+      background: #2c3e50; color: #fff; padding: 18px 32px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .top-bar h1 { margin: 0; font-size: 20px; }
+    .top-bar .meta { font-size: 13px; opacity: .8; }
+    .btn-refresh {
+      background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
+      border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,.25); }
+
+    main { max-width: 1200px; margin: 24px auto; padding: 0 20px 40px; }
+
+    /* ── SUMMARY ROW ── */
+    .summary-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 28px; }
+    .summary-card {
+      background: #fff; border-radius: 12px; padding: 20px 22px;
+      border: 2px solid var(--border); position: relative; overflow: hidden;
+    }
+    .summary-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+    }
+    .summary-card.dev::before   { background: var(--dev); }
+    .summary-card.infra::before { background: var(--primary); }
+    .summary-card.innov::before { background: var(--innov); }
+    .summary-card h2 { margin: 0 0 4px; font-size: 15px; }
+    .summary-card.dev   h2 { color: var(--dev); }
+    .summary-card.infra h2 { color: var(--primary); }
+    .summary-card.innov h2 { color: var(--innov); }
+    .big-pct { font-size: 52px; font-weight: 900; line-height: 1; margin: 8px 0 4px; }
+    .summary-card.dev   .big-pct { color: var(--dev); }
+    .summary-card.infra .big-pct { color: var(--primary); }
+    .summary-card.innov .big-pct { color: var(--innov); }
+    .nivel-chip {
+      display: inline-block; border-radius: 20px; padding: 3px 12px;
+      font-size: 13px; font-weight: 700; margin-bottom: 10px;
+    }
+    .chip-success { background: #e6f4ea; color: var(--success); }
+    .chip-warning { background: #fff3e0; color: var(--warning); }
+    .chip-danger  { background: #fde8e8; color: var(--danger); }
+    .chip-muted   { background: #f0f0f0; color: var(--muted); }
+    .sub-stats { font-size: 13px; color: var(--muted); }
+    .sub-stats strong { color: var(--text); }
+    .prog-wrap { background: #e8e8e8; border-radius: 6px; height: 8px; margin: 10px 0 0; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 6px; transition: width .6s; }
+    .prog-fill.dev   { background: var(--dev); }
+    .prog-fill.infra { background: var(--primary); }
+    .prog-fill.innov { background: var(--innov); }
+    .resp-count { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .resp-dots { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+    .dot {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+      background: #f5f5f5; font-size: 10px; display: flex; align-items: center; justify-content: center;
+    }
+    .dot.filled.dev   { background: var(--dev);     border-color: var(--dev);     color: #fff; }
+    .dot.filled.infra { background: var(--primary);  border-color: var(--primary);  color: #fff; }
+    .dot.filled.innov { background: var(--innov);    border-color: var(--innov);    color: #fff; }
+
+    /* ── DETAIL CARDS ── */
+    .detail-section { margin-bottom: 28px; }
+    .detail-section h3 {
+      font-size: 17px; margin: 0 0 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--border); color: var(--primary);
+    }
+    .cat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+    .cat-row {
+      background: #fff; border-radius: 10px; padding: 12px 16px;
+      border: 1px solid var(--border); display: flex; align-items: center; gap: 12px;
+    }
+    .cat-score {
+      font-size: 22px; font-weight: 900; min-width: 48px; text-align: right; flex-shrink: 0;
+    }
+    .cat-score.s { color: var(--success); }
+    .cat-score.b { color: #2196f3; }
+    .cat-score.a { color: var(--warning); }
+    .cat-score.r { color: var(--danger); }
+    .cat-score.n { color: var(--muted); }
+    .cat-label { font-size: 13px; flex: 1; }
+    .cat-bar-wrap { background: #e8e8e8; border-radius: 4px; height: 6px; margin-top: 4px; }
+    .cat-bar { height: 100%; border-radius: 4px; }
+
+    /* ── EMPTY / LOADING ── */
+    .status-msg {
+      text-align: center; padding: 60px 20px; color: var(--muted); font-size: 15px;
+    }
+    .spinner {
+      display: inline-block; width: 36px; height: 36px; border: 4px solid #ddd;
+      border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite;
+      margin-bottom: 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── LAST UPDATED ── */
+    .last-updated { font-size: 12px; color: var(--muted); text-align: right; margin-bottom: 18px; }
+
+    @media (max-width: 860px) {
+      .summary-row, .cat-grid { grid-template-columns: 1fr; }
+      .top-bar { padding: 16px 18px; }
+      main { padding: 0 14px 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="lock">🔒</div>
+    <h1>Panel de Resultados DIT</h1>
+    <p>Acceso exclusivo para líderes.<br>Ingresa la contraseña para continuar.</p>
+    <input type="password" id="pwdInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn-login" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="loginError">Contraseña incorrecta. Intenta de nuevo.</div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="dashboard" id="dashboard">
+  <div class="top-bar">
+    <div>
+      <h1>📊 Resultados consolidados — DIT</h1>
+      <div class="meta">Periodo: Enero - Junio 2026 &nbsp;·&nbsp; Evaluaciones anónimas del equipo</div>
+    </div>
+    <button class="btn-refresh" onclick="loadResults()">↻ Actualizar</button>
+  </div>
+
+  <main>
+    <div class="last-updated" id="lastUpdated"></div>
+
+    <!-- Summary cards -->
+    <div class="summary-row" id="summaryRow">
+      <div class="status-msg" style="grid-column:1/-1">
+        <div class="spinner"></div><br>Cargando resultados...
+      </div>
+    </div>
+
+    <!-- Detail per evaluado -->
+    <div id="detailSection"></div>
+  </main>
+</div>
+
+<script>
+  // ══ CONFIGURACIÓN — misma URL del Apps Script ══
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec';
+  const PASSWORD_KEY    = 'dit_pwd_2026';
+
+  // ── Login ─────────────────────────────────────────────────────────────────
+  // Verificar si ya hay sesión guardada
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = sessionStorage.getItem(PASSWORD_KEY);
+    if (saved) {
+      showDashboard(saved);
+    }
+  });
+
+  function doLogin() {
+    const pwd = document.getElementById('pwdInput').value.trim();
+    if (!pwd) return;
+    // Verificar contra Apps Script
+    verifyAndLoad(pwd);
+  }
+
+  async function verifyAndLoad(pwd) {
+    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec') {
+      // Modo demo sin backend
+      document.getElementById('loginError').textContent = 'Configura la URL del Apps Script primero.';
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=results&pwd=${encodeURIComponent(pwd)}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'ok') {
+        sessionStorage.setItem(PASSWORD_KEY, pwd);
+        showDashboard(pwd, json.data);
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('loginError').textContent = 'Contraseña incorrecta.';
+      }
+    } catch(e) {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginError').textContent = 'Error de conexión. Revisa la URL del Apps Script.';
+    }
+  }
+
+  function showDashboard(pwd, data) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    window._pwd = pwd;
+    if (data) renderResults(data);
+    else loadResults();
+  }
+
+  // ── Load results ──────────────────────────────────────────────────────────
+  async function loadResults() {
+    document.getElementById('summaryRow').innerHTML =
+      `<div class="status-msg" style="grid-column:1/-1"><div class="spinner"></div><br>Cargando resultados...</div>`;
+    document.getElementById('detailSection').innerHTML = '';
+
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=results&pwd=${encodeURIComponent(window._pwd)}`;
+      const res  = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'ok') {
+        renderResults(json.data);
+      } else {
+        showError('No autorizado o error al obtener datos.');
+      }
+    } catch(e) {
+      showError('Error de conexión: ' + e.message);
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('summaryRow').innerHTML =
+      `<div class="status-msg" style="grid-column:1/-1">❌ ${msg}</div>`;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const TIPOS = [
+    { key: 'dev',   label: 'Líder de Desarrollo',      clase: 'dev' },
+    { key: 'infra', label: 'Líder de Infraestructura',  clase: 'infra' },
+    { key: 'innov', label: 'Director de Innovación',    clase: 'innov' },
+  ];
+
+  function nivelChip(nivel) {
+    const map = {
+      'Sobresaliente':           'chip-success',
+      'Bueno':                   'chip-success',
+      'Aceptable con seguimiento':'chip-warning',
+      'Requiere mejora':         'chip-danger',
+      'Sin datos':               'chip-muted',
+    };
+    return `<span class="nivel-chip ${map[nivel]||'chip-muted'}">${nivel}</span>`;
+  }
+
+  function scoreClass(p) {
+    if (!p && p !== 0) return 'n';
+    if (p >= 3.5) return 's';
+    if (p >= 2.8) return 'b';
+    if (p >= 2.0) return 'a';
+    return 'r';
+  }
+
+  function renderResults(data) {
+    document.getElementById('lastUpdated').textContent =
+      `Última actualización: ${new Date().toLocaleString('es-MX')}`;
+
+    // ── Summary cards ──
+    let summaryHTML = '';
+    TIPOS.forEach(t => {
+      const d = data[t.key];
+      if (!d) return;
+      const pct   = d.pctGlobal || 0;
+      const prom  = d.promGlobal || 0;
+      const nivel = d.nivel || 'Sin datos';
+      const count = d.count || 0;
+      const total = d.totalEsp || 6;
+
+      // Dots
+      let dots = '';
+      for (let i = 0; i < total; i++) {
+        dots += i < count
+          ? `<div class="dot filled ${t.clase}">✓</div>`
+          : `<div class="dot">${i+1}</div>`;
+      }
+
+      summaryHTML += `
+        <div class="summary-card ${t.clase}">
+          <h2>${d.label}</h2>
+          ${nivelChip(nivel)}
+          <div class="big-pct">${count > 0 ? pct.toFixed(0)+'%' : '—'}</div>
+          <div class="sub-stats">
+            Promedio: <strong>${count > 0 ? prom.toFixed(2) : '—'}</strong>
+            ${d.ultimaFecha ? ` &nbsp;·&nbsp; Última: <strong>${d.ultimaFecha}</strong>` : ''}
+          </div>
+          <div class="prog-wrap">
+            <div class="prog-fill ${t.clase}" style="width:${pct}%"></div>
+          </div>
+          <div class="resp-count">${count} de ${total} evaluaciones recibidas</div>
+          <div class="resp-dots">${dots}</div>
+        </div>`;
+    });
+    document.getElementById('summaryRow').innerHTML = summaryHTML ||
+      `<div class="status-msg" style="grid-column:1/-1">Sin datos aún. Cuando los evaluadores envíen sus formularios aparecerán aquí.</div>`;
+
+    // ── Detail per evaluado ──
+    let detailHTML = '';
+    TIPOS.forEach(t => {
+      const d = data[t.key];
+      if (!d || !d.categorias || d.categorias.length === 0) return;
+
+      let catRows = '';
+      d.categorias.forEach(c => {
+        const p = c.promedio;
+        const sc = scoreClass(p);
+        const pct = p != null ? ((p/4)*100).toFixed(0) : 0;
+        const colorMap = { s:'var(--success)', b:'#2196f3', a:'var(--warning)', r:'var(--danger)', n:'#ccc' };
+        catRows += `
+          <div class="cat-row">
+            <div class="cat-score ${sc}">${p != null ? p.toFixed(2) : '—'}</div>
+            <div class="cat-label">
+              <div>${c.nombre.replace(/^\d+\.\s*/, '')}</div>
+              <div class="cat-bar-wrap">
+                <div class="cat-bar" style="width:${pct}%;background:${colorMap[sc]}"></div>
+              </div>
+            </div>
+          </div>`;
+      });
+
+      detailHTML += `
+        <div class="detail-section">
+          <h3 style="color:${t.clase==='dev'?'var(--dev)':t.clase==='innov'?'var(--innov)':'var(--primary)'}">
+            ${d.label} — Desglose por categoría
+            ${d.count === 0 ? '<span style="font-size:13px;color:var(--muted);font-weight:400"> (sin evaluaciones aún)</span>' : ''}
+          </h3>
+          ${d.count > 0
+            ? `<div class="cat-grid">${catRows}</div>`
+            : `<div class="status-msg" style="padding:20px">Aún no hay evaluaciones registradas para este perfil.</div>`
+          }
+        </div>`;
+    });
+    document.getElementById('detailSection').innerHTML = detailHTML;
+  }
+</script>
+</body>
+</html>

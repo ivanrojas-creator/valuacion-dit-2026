@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evaluación Anónima — DIT</title>
+  <title>Evaluación DIT — Enero-Junio 2026</title>
   <style>
     :root {
       --primary: #1f4e79;
@@ -156,7 +156,6 @@
 
 <div class="tabs-bar">
   <button class="tab-btn active" onclick="switchTab('form',this)">📋 Formulario de evaluación</button>
-  <button class="tab-btn"        onclick="switchTab('results',this)">📊 Resultados consolidados</button>
 </div>
 
 <!-- ══ TAB FORMULARIO ══ -->
@@ -164,7 +163,7 @@
 <div class="container">
   <div id="panelHeader" class="panel-header infra">
     <h1 id="panelTitle">Evaluación Anónima — DIT</h1>
-    <p id="panelSub">Periodo sugerido: primeros 2 meses en la organización</p>
+    <p id="panelSub">Periodo de evaluación: Enero - Junio 2026</p>
   </div>
   <main>
     <div class="anon-badge">
@@ -198,7 +197,7 @@
         </div>
         <div style="grid-column:1/-1">
           <label for="periodo">Periodo evaluado</label>
-          <input id="periodo" type="text" value="Primeros 2 meses en la organización" />
+          <input id="periodo" type="text" value="Enero - Junio 2026" />
         </div>
       </div>
 
@@ -691,27 +690,32 @@
 </div>
 </div><!-- /tab-form -->
 
-<!-- ══ TAB RESULTADOS ══ -->
-<div id="tab-results" class="tab-panel">
-<div class="container">
-  <div class="panel-header results">
-    <h1>Resultados consolidados — Líderes DIT</h1>
-    <p>Puntaje acumulado de las evaluaciones anónimas registradas en esta sesión</p>
-  </div>
-  <main>
-    <div class="counter-bar">
-      <div class="counter-item"><span class="counter-dot dev"></span>Líder de Desarrollo: <strong id="cntDev">0</strong>&nbsp;/ 6</div>
-      <div class="counter-item"><span class="counter-dot infra"></span>Líder Infraestructura: <strong id="cntInfra">0</strong>&nbsp;/ 6</div>
-      <div class="counter-item"><span class="counter-dot innov"></span>Director Innovación: <strong id="cntInnov">0</strong>&nbsp;/ 6</div>
-      <div style="margin-left:auto"><button class="btn-sec" style="font-size:13px;padding:7px 14px" onclick="resetResultados()">🗑 Borrar todo</button></div>
-    </div>
-    <div id="resultsContent"><div class="no-data">Aún no hay evaluaciones registradas.<br>Completa el formulario y presiona <em>Calcular y registrar</em>.</div></div>
-    <div class="results-note">Los datos se almacenan en memoria de esta sesión. Imprime o guarda como PDF antes de cerrar el navegador.</div>
-  </main>
-</div>
-</div><!-- /tab-results -->
 
 <script>
+  // ══ CONFIGURACIÓN — pega aquí la URL de tu Apps Script Web App ══
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec';
+
+  // ══ Enviar resultado a Google Sheets ══
+  async function sendToSheets(payload) {
+    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec') {
+      console.warn('Apps Script URL not configured. Data saved locally only.');
+      return { ok: false, reason: 'not_configured' };
+    }
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return { ok: true };
+    } catch(e) {
+      console.error('Error sending to Sheets:', e);
+      return { ok: false, reason: e.message };
+    }
+  }
+
+
 // ══════════ CATÁLOGOS (13 categorías por líder) ══════════
 const catsInnov = ["1. Claridad de visión e identidad del rol","2. Pensamiento estratégico e innovación","3. Gestión de la innovación como proceso","4. Influencia transversal y gestión del cambio","5. Liderazgo directivo e inteligencia emocional","6. Orientación a resultados y generación de valor","7. Comunicación con dirección general y C-level","8. Gestión de ecosistema externo y alianzas","9. Cultura de innovación y desarrollo de talento","10. Gestión de presupuesto y recursos de innovación","11. Ética, responsabilidad y sostenibilidad","12. Seguimiento, rendición de cuentas y aprendizaje"];
 const catsDev = [
@@ -756,25 +760,25 @@ function onEvaluadoChange() {
   nota.style.display='none';
   if(v==='dev'){
     h.className='panel-header dev';ti.textContent='Evaluación Anónima — Líder de Desarrollo';
-    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    sub.textContent='Periodo de evaluación: Enero - Junio 2026';
     intro.className='intro dev';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Líder de Desarrollo (13 rubros).';
     btn.className='btn-dev';sel.className='ev-select dev-sel';
     document.getElementById('block-dev').style.display='block';
   } else if(v==='infra'){
     h.className='panel-header infra';ti.textContent='Evaluación Anónima — Líder de Infraestructura';
-    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    sub.textContent='Periodo de evaluación: Enero - Junio 2026';
     intro.className='intro';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Líder de Infraestructura (13 rubros).';
     btn.className='btn-infra';sel.className='ev-select infra-sel';
     document.getElementById('block-infra').style.display='block';
   } else if(v==='innov'){
     h.className='panel-header innov';ti.textContent='Evaluación Anónima — Director de Innovación';
-    sub.textContent='Perfil directivo estratégico · Periodo sugerido: primeros 3 meses en la organización';
+    sub.textContent='Director de Innovación · Enero - Junio 2026';
     intro.className='intro innov';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Director de Innovación — enfoque estratégico, transversal y de generación de valor (12 rubros).';
     nota.style.display='block';btn.className='btn-innov';sel.className='ev-select innov-sel';
     document.getElementById('block-innov').style.display='block';
   } else {
     h.className='panel-header infra';ti.textContent='Evaluación Anónima — DIT';
-    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    sub.textContent='Periodo de evaluación: Enero - Junio 2026';
     intro.className='intro';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del evaluado.';
     btn.className='btn-infra';sel.className='ev-select';
   }
@@ -795,7 +799,7 @@ function nc(p) {
 }
 
 // ══════════ CALCULAR ══════════
-function calcularResultado() {
+async function calcularResultado() {
   const tipo = document.getElementById('evaluado').value;
   if (!tipo) { alert('Seleccione el líder a evaluar.'); return; }
 
@@ -857,6 +861,41 @@ function calcularResultado() {
   document.getElementById('cntDev').textContent=acumulado.dev.evaluaciones.length;
   document.getElementById('cntInfra').textContent=acumulado.infra.evaluaciones.length;
   document.getElementById('cntInnov').textContent=acumulado.innov.evaluaciones.length;
+  // Enviar a Google Sheets
+  const payload = {
+    timestamp: new Date().toISOString(),
+    tipo: tipo,
+    evaluado_label: {dev:'Líder de Desarrollo',infra:'Líder de Infraestructura',innov:'Director de Innovación'}[tipo],
+    periodo: document.getElementById('periodo').value,
+    fecha: fecha,
+    total: total,
+    evaluadas: evaluadas,
+    maximo: maximo,
+    promedio: parseFloat(prom.toFixed(2)),
+    porcentaje: parseFloat(pct.toFixed(1)),
+    nivel: niv,
+    categorias: acumCat.map((c,i) => ({
+      nombre: cats[i],
+      promedio: c.ev>0 ? parseFloat((c.total/c.ev).toFixed(2)) : null,
+      porcentaje: c.ev>0 ? parseFloat(((c.total/(c.ev*4))*100).toFixed(1)) : null,
+      evaluadas: c.ev
+    }))
+  };
+
+  const statusEl = document.getElementById('sendStatus');
+  statusEl.innerHTML = '⏳ Enviando resultado...';
+  statusEl.style.display = 'block';
+
+  sendToSheets(payload).then(result => {
+    if (result.ok || result.reason === 'not_configured') {
+      statusEl.innerHTML = result.reason === 'not_configured'
+        ? '⚠️ Configura la URL de Apps Script para guardar en Sheets.'
+        : '✅ Resultado enviado y guardado correctamente.';
+    } else {
+      statusEl.innerHTML = '❌ Error al enviar. Toma captura de pantalla como respaldo.';
+    }
+  });
+
   document.getElementById('localResult').scrollIntoView({behavior:'smooth'});
 }
 
@@ -923,7 +962,7 @@ function resetResultados() {
 function limpiarFormulario() {
   if (!confirm('¿Limpiar el formulario actual?')) return;
   document.getElementById('evalForm').reset();
-  document.getElementById('periodo').value = 'Primeros 2 meses en la organización';
+  document.getElementById('periodo').value = 'Enero - Junio 2026';
   document.getElementById('localResult').style.display = 'none';
   onEvaluadoChange();
 }
