@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluación Anónima — DIT</title>
+  <style>
+    :root {
+      --primary: #1f4e79;
+      --dev: #1a6b3a;
+      --dev-light: #e8f5ee;
+      --border: #d7dee8;
+      --bg: #eef2f6;
+      --text: #1a1a1a;
+      --muted: #666;
+      --success: #2e7d32;
+      --warning: #f57c00;
+      --danger: #c62828;
+    --innov: #5b1f8a;
+    --innov-light: #f3eafc;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    /* TABS */
+    .tabs-bar { background: var(--primary); display: flex; padding: 0 32px; overflow-x: auto; }
+    .tab-btn { background: transparent; border: none; color: rgba(255,255,255,.65); padding: 16px 22px; cursor: pointer; font-size: 14px; font-weight: 700; border-bottom: 3px solid transparent; white-space: nowrap; }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: #fff; border-bottom-color: #fff; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* LAYOUT */
+    .container { max-width: 1100px; margin: 24px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.08); overflow: hidden; }
+    .panel-header { padding: 26px 32px; color: #fff; }
+    .panel-header.dev  { background: var(--dev); }
+    .panel-header.infra  { background: var(--primary); }
+    .panel-header.innov  { background: #5b1f8a; }
+    .panel-header.results { background: #2c3e50; }
+    .panel-header h1 { margin: 0 0 5px; font-size: 22px; }
+    .panel-header p  { margin: 0; opacity: .9; font-size: 13px; }
+    main { padding: 26px 32px; }
+
+    /* ANON BADGE */
+    .anon-badge { display: inline-flex; align-items: center; gap: 8px; background: #e8f0fe; border: 1px solid #c5d6f8; border-radius: 8px; padding: 9px 14px; font-size: 13px; color: #1a3a70; margin-bottom: 18px; }
+
+    /* INTRO */
+    .intro { background: #f3f6fa; border-left: 5px solid var(--primary); padding: 12px 16px; border-radius: 8px; margin-bottom: 22px; font-size: 14px; }
+    .intro.dev   { border-left-color: var(--dev); }
+    .intro.innov { border-left-color: #5b1f8a; background: #f3eafc; }
+
+    /* FORM FIELDS */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+    label { display: block; font-weight: 700; margin-bottom: 5px; font-size: 14px; }
+    select, input[type="date"], input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fff; }
+    textarea { min-height: 78px; resize: vertical; }
+    .ev-select { border-width: 2px; font-weight: 700; }
+    .ev-select.dev-sel  { border-color: var(--dev);     color: var(--dev); }
+    .ev-select.infra-sel{ border-color: var(--primary);  color: var(--primary); }
+
+    /* SECTIONS */
+    .legend { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+
+    /* BLOCKS dev/infra hidden by default */
+    .block-dev, .block-infra, .block-innov { display: none; }
+
+    section.cat { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
+    section.cat h2 { margin: 0; background: #f3f6fa; color: var(--primary); padding: 12px 18px; font-size: 15px; border-bottom: 1px solid var(--border); }
+    section.cat.dev   h2 { color: var(--dev);  background: var(--dev-light); }
+    section.cat.innov h2 { color: #5b1f8a; background: #f3eafc; }
+    .question { display: grid; grid-template-columns: 1fr 200px; gap: 12px; align-items: center; padding: 10px 18px; border-bottom: 1px solid #edf0f4; }
+    .question:last-child { border-bottom: 0; }
+    .question p { margin: 0; font-size: 14px; }
+    .comments-block { padding: 12px 18px; background: #fbfcfe; border-top: 1px solid var(--border); }
+
+    /* ACTIONS */
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    button { border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-weight: 700; font-size: 14px; }
+    .btn-dev   { background: var(--dev);     color: #fff; }
+    .btn-infra { background: var(--primary); color: #fff; }
+    .btn-innov { background: #5b1f8a; color: #fff; }
+    .btn-sec   { background: #e6ecf3; color: #1f2d3a; }
+
+    /* LOCAL RESULT */
+    .local-result { display: none; border: 2px solid var(--border); border-radius: 12px; padding: 20px; background: #f8fbff; margin-top: 22px; }
+    .local-result h2 { margin: 0 0 10px; color: var(--primary); font-size: 17px; }
+    .score-boxes { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 12px 0; }
+    .score-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+    .score-card strong { display: block; font-size: 22px; color: var(--primary); margin-bottom: 3px; }
+    .level { font-size: 17px; font-weight: 700; margin: 8px 0; }
+    .level.success { color: var(--success); }
+    .level.warning { color: var(--warning); }
+    .level.danger  { color: var(--danger); }
+    .cat-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .cat-table th, .cat-table td { border: 1px solid var(--border); padding: 7px 10px; font-size: 13px; text-align: left; }
+    .cat-table th { background: #f3f6fa; color: var(--primary); }
+
+    /* CONSOLIDATED */
+    .counter-bar { display: flex; gap: 16px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; margin-bottom: 22px; flex-wrap: wrap; align-items: center; }
+    .counter-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .counter-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .counter-dot.dev   { background: var(--dev); }
+    .counter-dot.infra { background: var(--primary); }
+    .counter-dot.innov { background: #5b1f8a; }
+    .counter-item strong { font-size: 20px; }
+    .results-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 22px; }
+    .leader-card { border-radius: 12px; padding: 22px; border: 2px solid var(--border); }
+    .leader-card.dev   { border-color: var(--dev);     background: var(--dev-light); }
+    .leader-card.infra { border-color: var(--primary); background: #f0f5fc; }
+    .leader-card.innov { border-color: #5b1f8a; background: #f3eafc; }
+    .leader-card h2 { margin: 0 0 14px; font-size: 17px; }
+    .leader-card.dev h2   { color: var(--dev); }
+    .leader-card.infra h2 { color: var(--primary); }
+    .leader-card.innov h2 { color: #5b1f8a; }
+    .big-score { text-align: center; padding: 14px; background: #fff; border-radius: 10px; margin-bottom: 14px; border: 1px solid var(--border); }
+    .big-score .num { font-size: 44px; font-weight: 900; line-height: 1; }
+    .big-score.dev   .num { color: var(--dev); }
+    .big-score.infra .num { color: var(--primary); }
+    .big-score.innov .num { color: #5b1f8a; }
+    .big-score .sublabel { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .big-score .nivel { font-size: 14px; font-weight: 700; margin-top: 5px; }
+    .prog-bar-wrap { background: #e0e0e0; border-radius: 6px; height: 9px; margin: 4px 0 12px; overflow: hidden; }
+    .prog-bar { height: 100%; border-radius: 6px; transition: width .4s; }
+    .prog-bar.dev   { background: var(--dev); }
+    .prog-bar.infra { background: var(--primary); }
+    .prog-bar.innov { background: #5b1f8a; }
+    .badge { display: inline-block; border-radius: 20px; padding: 3px 11px; font-size: 12px; margin-bottom: 10px; }
+    .badge.dev   { background: #d4edda; color: var(--dev); }
+    .badge.infra { background: #dce8f7; color: var(--primary); }
+    .badge.innov { background: #ead9f7; color: #5b1f8a; }
+    .cat-mini-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ddd; font-size: 13px; }
+    .cat-mini-row:last-child { border-bottom: none; }
+    .no-data { text-align: center; color: var(--muted); padding: 32px; font-size: 15px; }
+    .results-note { background: #f3f6fa; border-left: 4px solid #999; padding: 11px 15px; font-size: 12px; color: var(--muted); border-radius: 8px; margin-top: 20px; }
+
+    @media (max-width: 900px) {
+      .results-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 720px) {
+      .field-row, .question, .score-boxes, .results-grid { grid-template-columns: 1fr; }
+      main, .panel-header { padding: 18px; }
+    }
+    .escala-director { background: #faf5ff; border: 1px solid #d9b8f7; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #3d1060; margin-bottom: 18px; }
+    .escala-director strong { display: block; margin-bottom: 4px; }
+    @media print {
+      body { background: #fff; }
+      .container { box-shadow: none; margin: 0; max-width: none; }
+      .actions, .tabs-bar { display: none !important; }
+      .tab-panel { display: block !important; }
+      .local-result { display: block !important; }
+      section.cat { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('form',this)">📋 Formulario de evaluación</button>
+  <button class="tab-btn"        onclick="switchTab('results',this)">📊 Resultados consolidados</button>
+</div>
+
+<!-- ══ TAB FORMULARIO ══ -->
+<div id="tab-form" class="tab-panel active">
+<div class="container">
+  <div id="panelHeader" class="panel-header infra">
+    <h1 id="panelTitle">Evaluación Anónima — DIT</h1>
+    <p id="panelSub">Periodo sugerido: primeros 2 meses en la organización</p>
+  </div>
+  <main>
+    <div class="anon-badge">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Evaluación <strong>&nbsp;anónima&nbsp;</strong> — no se registra el nombre del evaluador.
+    </div>
+
+    <div id="introBox" class="intro">
+      <strong>Objetivo:</strong> evaluar el desempeño inicial del líder seleccionado considerando adaptación, liderazgo, conocimientos técnicos, estrategia, metodologías, seguimiento, operación y comunicación con la dirección.
+    </div>
+
+    <!-- Nota escala Director -->
+    <div id="notaDirector" class="escala-director" style="display:none">
+      <strong>⚠️ Nota — Director de Innovación (perfil directivo estratégico)</strong>
+      Esta evaluación mide visión, influencia transversal, generación de valor e impacto estratégico. Las preguntas no evalúan operación técnica. Usa la misma escala numérica, pero las expectativas son acordes al nivel directivo del rol.
+    </div>
+    <form id="evalForm">
+      <div class="field-row">
+        <div>
+          <label for="evaluado">Evaluado</label>
+          <select id="evaluado" class="ev-select" onchange="onEvaluadoChange()">
+            <option value="">— Seleccione el líder a evaluar —</option>
+            <option value="dev">Líder de Desarrollo</option>
+            <option value="infra">Líder de Infraestructura</option>
+            <option value="innov">Director de Innovación</option>
+          </select>
+        </div>
+        <div>
+          <label for="fecha">Fecha de evaluación</label>
+          <input id="fecha" type="date" />
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="periodo">Periodo evaluado</label>
+          <input id="periodo" type="text" value="Primeros 2 meses en la organización" />
+        </div>
+      </div>
+
+      <p class="legend"><strong>Escala:</strong> 4 = Excelente · 3 = Bueno · 2 = Regular · 1 = Requiere mejora · 0 = No evaluado</p>
+
+      <!-- ════════════════════════════════════
+           BLOQUE LÍDER DE DESARROLLO (13 rubros)
+           ════════════════════════════════════ -->
+      <div class="block-dev" id="block-dev">
+
+        <!-- 1 -->
+        <section class="cat dev">
+          <h2>1. Adaptación a la organización</h2>
+          <div class="question"><p>Comprende la estructura, procesos y prioridades de la organización.</p><select name="d_0_0" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Se ha integrado adecuadamente con el equipo de desarrollo y áreas relacionadas.</p><select name="d_0_1" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica responsabilidades, dependencias, sistemas críticos y puntos de riesgo del área.</p><select name="d_0_2" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Muestra disposición para aprender procesos internos, políticas y herramientas existentes.</p><select name="d_0_3" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica a los actores clave con quienes debe alinearse dentro y fuera del área.</p><select name="d_0_4" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre adaptación"></textarea></div>
+        </section>
+
+        <!-- 2 -->
+        <section class="cat dev">
+          <h2>2. Habilidades blandas y liderazgo</h2>
+          <div class="question"><p>Mantiene una comunicación clara, respetuosa y efectiva con su equipo.</p><select name="d_1_0" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escucha activamente al personal a cargo y considera sus aportaciones.</p><select name="d_1_1" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Genera confianza, orden y sentido de responsabilidad en el equipo.</p><select name="d_1_2" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Maneja adecuadamente diferencias, presión o situaciones de conflicto.</p><select name="d_1_3" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Delega actividades de forma clara y da seguimiento a los compromisos asignados.</p><select name="d_1_4" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve colaboración, respeto y trabajo en equipo.</p><select name="d_1_5" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Demuestra apertura a la retroalimentación y actitud de mejora continua.</p><select name="d_1_6" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da el ejemplo con su actitud, cumplimiento y trato hacia los demás.</p><select name="d_1_7" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre liderazgo y habilidades blandas"></textarea></div>
+        </section>
+
+        <!-- 3 -->
+        <section class="cat dev">
+          <h2>3. Inteligencia emocional y autogestión</h2>
+          <div class="question"><p>Mantiene calma y juicio ante situaciones de presión, crisis o incertidumbre.</p><select name="d_2_0" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce sus errores y los asume con responsabilidad sin excusas.</p><select name="d_2_1" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Regula sus emociones y evita reacciones que afecten el ambiente del equipo.</p><select name="d_2_2" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica sus áreas de mejora personal y busca activamente desarrollarlas.</p><select name="d_2_3" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene motivación y energía positiva incluso en contextos de alta demanda.</p><select name="d_2_4" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre inteligencia emocional"></textarea></div>
+        </section>
+
+        <!-- 4 -->
+        <section class="cat dev">
+          <h2>4. Gestión del equipo a cargo</h2>
+          <div class="question"><p>Conoce las funciones, capacidades y áreas de oportunidad de su equipo.</p><select name="d_3_0" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Organiza las actividades del equipo considerando prioridades e impacto en los proyectos.</p><select name="d_3_1" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento a pendientes, incidencias, solicitudes y tareas recurrentes.</p><select name="d_3_2" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica necesidades de capacitación, refuerzo técnico o redistribución de cargas.</p><select name="d_3_3" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta responsabilidad individual y cumplimiento de compromisos.</p><select name="d_3_4" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene visibilidad sobre el desempeño general del equipo.</p><select name="d_3_5" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Ofrece retroalimentación constructiva y oportuna a los miembros del equipo.</p><select name="d_3_6" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión del equipo"></textarea></div>
+        </section>
+
+        <!-- 5 -->
+        <section class="cat dev">
+          <h2>5. Conocimientos técnicos generales</h2>
+          <div class="question"><p>Demuestra conocimientos sólidos en desarrollo de software, arquitectura y buenas prácticas.</p><select name="d_4_0" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Comprende conceptos de calidad de código, deuda técnica, pruebas y entrega continua (CI/CD).</p><select name="d_4_1" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica y evalúa riesgos técnicos en los proyectos a su cargo.</p><select name="d_4_2" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Analiza problemas técnicos considerando causa raíz, impacto y acciones preventivas.</p><select name="d_4_3" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Propone soluciones técnicas viables de acuerdo con los recursos y tiempos disponibles.</p><select name="d_4_4" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Tiene criterio para priorizar eventos críticos sobre actividades de menor impacto.</p><select name="d_4_5" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la documentación técnica de sistemas, APIs, decisiones de arquitectura y procedimientos.</p><select name="d_4_6" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Comprende conceptos de seguridad en aplicaciones (OWASP, autenticación, autorización, cifrado).</p><select name="d_4_7" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre conocimientos técnicos"></textarea></div>
+        </section>
+
+        <!-- 6 -->
+        <section class="cat dev">
+          <h2>6. Gestión de calidad y pruebas</h2>
+          <div class="question"><p>Promueve estándares de calidad de código dentro del equipo (revisiones, linting, cobertura).</p><select name="d_5_0" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la práctica de pruebas unitarias, de integración y/o de aceptación.</p><select name="d_5_1" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Supervisa que los entregables cumplan criterios de aceptación antes de pasar a producción.</p><select name="d_5_2" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica y gestiona la deuda técnica con criterio de impacto y prioridad.</p><select name="d_5_3" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Establece o refuerza pipelines de integración/entrega continua (CI/CD).</p><select name="d_5_4" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre calidad y pruebas"></textarea></div>
+        </section>
+
+        <!-- 7 -->
+        <section class="cat dev">
+          <h2>7. Estrategia y visión del área</h2>
+          <div class="question"><p>Identifica prioridades de corto plazo para estabilizar o mejorar la operación de desarrollo.</p><select name="d_6_0" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Detecta riesgos futuros, necesidades de crecimiento o actualización tecnológica.</p><select name="d_6_1" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Propone mejoras alineadas a los objetivos de negocio y estrategia organizacional.</p><select name="d_6_2" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa impacto, urgencia, costo, riesgo y beneficio antes de proponer acciones.</p><select name="d_6_3" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Traduce necesidades técnicas en información clara y accionable para la dirección.</p><select name="d_6_4" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Distingue entre acciones correctivas inmediatas y planes de mejora estructural.</p><select name="d_6_5" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre estrategia"></textarea></div>
+        </section>
+
+        <!-- 8 -->
+        <section class="cat dev">
+          <h2>8. Metodologías, orden y procesos</h2>
+          <div class="question"><p>Promueve una forma ordenada de trabajo basada en prioridades, evidencias y seguimiento.</p><select name="d_7_0" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Utiliza o impulsa metodologías ágiles (Scrum, Kanban u otras) adaptadas al contexto del equipo.</p><select name="d_7_1" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta la documentación de procedimientos operativos y decisiones técnicas.</p><select name="d_7_2" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica procesos inexistentes, incompletos o que requieren mejora.</p><select name="d_7_3" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento a acuerdos mediante tableros, reportes o herramientas de gestión.</p><select name="d_7_4" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve buenas prácticas en control de versiones, revisiones de código y gestión de ramas.</p><select name="d_7_5" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre metodologías y procesos"></textarea></div>
+        </section>
+
+        <!-- 9 -->
+        <section class="cat dev">
+          <h2>9. Seguimiento y cumplimiento</h2>
+          <div class="question"><p>Da seguimiento oportuno a tareas asignadas por la dirección.</p><select name="d_8_0" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene control sobre pendientes críticos del área de desarrollo.</p><select name="d_8_1" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Informa avances, bloqueos y riesgos antes de que se conviertan en problemas mayores.</p><select name="d_8_2" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Cumple compromisos o comunica oportunamente cuando existe algún impedimento.</p><select name="d_8_3" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Prioriza correctamente actividades urgentes, importantes y operativas.</p><select name="d_8_4" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene trazabilidad de acuerdos, responsables y fechas compromiso.</p><select name="d_8_5" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre seguimiento"></textarea></div>
+        </section>
+
+        <!-- 10 -->
+        <section class="cat dev">
+          <h2>10. Comunicación con la dirección</h2>
+          <div class="question"><p>Informa de manera clara el estado del área de desarrollo.</p><select name="d_9_0" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Presenta riesgos, necesidades y avances con lenguaje comprensible para la toma de decisiones.</p><select name="d_9_1" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escala oportunamente problemas críticos o situaciones que requieren apoyo directivo.</p><select name="d_9_2" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Diferencia asuntos operativos de asuntos estratégicos al comunicarse con la dirección.</p><select name="d_9_3" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene comunicación profesional, objetiva y basada en hechos.</p><select name="d_9_4" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Atiende instrucciones, prioridades y retroalimentación de la dirección con disposición.</p><select name="d_9_5" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre comunicación"></textarea></div>
+        </section>
+
+        <!-- 11 -->
+        <section class="cat dev">
+          <h2>11. Gestión operativa de proyectos</h2>
+          <div class="question"><p>Da seguimiento a proyectos activos, entregables, sprints y fechas compromiso.</p><select name="d_10_0" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Atiende incidencias en producción con sentido de urgencia y análisis de impacto.</p><select name="d_10_1" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica riesgos de entrega y propone acciones preventivas o correctivas.</p><select name="d_10_2" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Verifica controles básicos sobre calidad, accesos, despliegues y ambientes.</p><select name="d_10_3" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Coordina actividades técnicas y de negocio evitando afectar la operación.</p><select name="d_10_4" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Busca reducir recurrencia de incidentes mediante análisis de causa raíz y mejora de procesos.</p><select name="d_10_5" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre operación de proyectos"></textarea></div>
+        </section>
+
+        <!-- 12 -->
+        <section class="cat dev">
+          <h2>12. Relación con otras áreas y clientes internos</h2>
+          <div class="question"><p>Mantiene una relación de colaboración y servicio con otras áreas de la organización.</p><select name="d_11_0" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Gestiona solicitudes de clientes internos con orientación a resultados y plazos claros.</p><select name="d_11_1" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Establece expectativas realistas y comunica limitaciones técnicas con claridad.</p><select name="d_11_2" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Coordina con infraestructura, QA, producto y otras áreas de forma efectiva.</p><select name="d_11_3" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre relación con otras áreas"></textarea></div>
+        </section>
+
+        <!-- 13 -->
+        <section class="cat dev">
+          <h2>13. Cultura de ingeniería e innovación</h2>
+          <div class="question"><p>Promueve una cultura de aprendizaje continuo y mejora técnica dentro del equipo.</p><select name="d_12_0" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta la exploración de nuevas tecnologías, herramientas o enfoques cuando aplica.</p><select name="d_12_1" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la automatización de tareas repetitivas o propensas a error.</p><select name="d_12_2" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce y valora las aportaciones técnicas del equipo.</p><select name="d_12_3" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve experimentación controlada y tolera el error como parte del aprendizaje.</p><select name="d_12_4" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre cultura e innovación"></textarea></div>
+        </section>
+
+        <!-- Comentarios generales DEV -->
+        <section class="cat dev">
+          <h2>Comentarios generales</h2>
+          <div class="comments-block">
+            <label for="d_fortalezas">Fortalezas observadas</label>
+            <textarea id="d_fortalezas" placeholder="Principales fortalezas del Líder de Desarrollo"></textarea><br><br>
+            <label for="d_oportunidades">Áreas de oportunidad</label>
+            <textarea id="d_oportunidades" placeholder="Aspectos a reforzar o mejorar"></textarea><br><br>
+            <label for="d_riesgos">Riesgos o puntos de atención</label>
+            <textarea id="d_riesgos" placeholder="Riesgos, bloqueos o temas críticos"></textarea>
+          </div>
+        </section>
+
+      </div><!-- /block-dev -->
+
+
+      <!-- ════════════════════════════════════
+           BLOQUE LÍDER DE INFRAESTRUCTURA (13 rubros)
+           ════════════════════════════════════ -->
+      <div class="block-infra" id="block-infra">
+
+        <!-- 1 -->
+        <section class="cat">
+          <h2>1. Adaptación a la organización</h2>
+          <div class="question"><p>Comprende la estructura, procesos y prioridades de la organización.</p><select name="i_0_0" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Se ha integrado adecuadamente con el equipo de infraestructura y áreas relacionadas.</p><select name="i_0_1" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica responsabilidades, dependencias, servicios críticos y puntos de riesgo del área.</p><select name="i_0_2" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Muestra disposición para aprender procesos internos, políticas y herramientas existentes.</p><select name="i_0_3" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica a los actores clave con quienes debe alinearse dentro y fuera del área.</p><select name="i_0_4" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre adaptación"></textarea></div>
+        </section>
+
+        <!-- 2 -->
+        <section class="cat">
+          <h2>2. Habilidades blandas y liderazgo</h2>
+          <div class="question"><p>Mantiene una comunicación clara, respetuosa y efectiva con su equipo.</p><select name="i_1_0" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escucha activamente al personal a cargo y considera sus aportaciones.</p><select name="i_1_1" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Genera confianza, orden y sentido de responsabilidad en el equipo.</p><select name="i_1_2" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Maneja adecuadamente diferencias, presión o situaciones de conflicto.</p><select name="i_1_3" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Delega actividades de forma clara y da seguimiento a los compromisos asignados.</p><select name="i_1_4" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve colaboración, respeto y trabajo en equipo.</p><select name="i_1_5" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Demuestra apertura a la retroalimentación y actitud de mejora continua.</p><select name="i_1_6" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da el ejemplo con su actitud, cumplimiento y trato hacia los demás.</p><select name="i_1_7" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre liderazgo"></textarea></div>
+        </section>
+
+        <!-- 3 -->
+        <section class="cat">
+          <h2>3. Inteligencia emocional y autogestión</h2>
+          <div class="question"><p>Mantiene calma y juicio ante situaciones de presión, crisis o incertidumbre.</p><select name="i_2_0" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce sus errores y los asume con responsabilidad sin excusas.</p><select name="i_2_1" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Regula sus emociones y evita reacciones que afecten el ambiente del equipo.</p><select name="i_2_2" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica sus áreas de mejora personal y busca activamente desarrollarlas.</p><select name="i_2_3" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene motivación y energía positiva incluso en contextos de alta demanda operativa.</p><select name="i_2_4" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre inteligencia emocional"></textarea></div>
+        </section>
+
+        <!-- 4 -->
+        <section class="cat">
+          <h2>4. Gestión del equipo a cargo</h2>
+          <div class="question"><p>Conoce las funciones, capacidades y áreas de oportunidad de su equipo.</p><select name="i_3_0" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Organiza las actividades del equipo considerando prioridades e impacto operativo.</p><select name="i_3_1" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento a pendientes, incidencias, solicitudes y tareas recurrentes.</p><select name="i_3_2" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica necesidades de capacitación, refuerzo técnico o redistribución de cargas.</p><select name="i_3_3" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta responsabilidad individual y cumplimiento de compromisos.</p><select name="i_3_4" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene visibilidad sobre el desempeño general del equipo.</p><select name="i_3_5" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Ofrece retroalimentación constructiva y oportuna a los miembros del equipo.</p><select name="i_3_6" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión del equipo"></textarea></div>
+        </section>
+
+        <!-- 5 -->
+        <section class="cat">
+          <h2>5. Conocimientos técnicos generales</h2>
+          <div class="question"><p>Demuestra conocimientos en servidores, redes, almacenamiento y respaldos.</p><select name="i_4_0" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Comprende conceptos de seguridad, continuidad operativa y disponibilidad de servicios.</p><select name="i_4_1" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica riesgos técnicos en infraestructura crítica.</p><select name="i_4_2" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Analiza incidencias técnicas considerando causa raíz, impacto y acciones preventivas.</p><select name="i_4_3" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Propone soluciones técnicas viables de acuerdo con los recursos disponibles.</p><select name="i_4_4" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Tiene criterio para priorizar eventos críticos sobre actividades operativas menores.</p><select name="i_4_5" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la documentación técnica de configuraciones, servicios, respaldos y procedimientos.</p><select name="i_4_6" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Conoce y aplica conceptos de virtualización, nube o contenedores según el contexto del área.</p><select name="i_4_7" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre conocimientos técnicos"></textarea></div>
+        </section>
+
+        <!-- 6 -->
+        <section class="cat">
+          <h2>6. Seguridad y cumplimiento</h2>
+          <div class="question"><p>Asegura controles básicos de acceso: principio de mínimo privilegio, gestión de cuentas y contraseñas.</p><select name="i_5_0" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Verifica que los respaldos críticos se ejecutan, validan y pueden restaurarse.</p><select name="i_5_1" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Detecta y gestiona vulnerabilidades o exposiciones en la infraestructura.</p><select name="i_5_2" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene documentados y vigentes los planes de continuidad o recuperación ante desastres.</p><select name="i_5_3" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Monitorea activamente la disponibilidad, rendimiento y alertas de los servicios críticos.</p><select name="i_5_4" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Gestiona parches, actualizaciones y ciclo de vida de sistemas con criterio de riesgo.</p><select name="i_5_5" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre seguridad y cumplimiento"></textarea></div>
+        </section>
+
+        <!-- 7 -->
+        <section class="cat">
+          <h2>7. Estrategia y visión del área</h2>
+          <div class="question"><p>Identifica prioridades de corto plazo para estabilizar o mejorar la operación.</p><select name="i_6_0" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Detecta riesgos futuros, necesidades de crecimiento o actualización tecnológica.</p><select name="i_6_1" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Propone mejoras alineadas a los objetivos de la organización.</p><select name="i_6_2" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa impacto, urgencia, costo, riesgo y beneficio antes de proponer acciones.</p><select name="i_6_3" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Traduce necesidades técnicas en información clara para la toma de decisiones directivas.</p><select name="i_6_4" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Distingue entre acciones correctivas inmediatas y planes de mejora estructural.</p><select name="i_6_5" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre estrategia"></textarea></div>
+        </section>
+
+        <!-- 8 -->
+        <section class="cat">
+          <h2>8. Metodologías, orden y procesos</h2>
+          <div class="question"><p>Promueve una forma ordenada de trabajo basada en prioridades, evidencias y seguimiento.</p><select name="i_7_0" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Utiliza o impulsa metodologías para atención de incidentes, cambios y solicitudes (ITSM/ITIL).</p><select name="i_7_1" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta la documentación de procedimientos operativos y técnicos.</p><select name="i_7_2" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica procesos inexistentes, incompletos o que requieren mejora.</p><select name="i_7_3" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento a acuerdos mediante bitácoras, tableros, reportes o herramientas de control.</p><select name="i_7_4" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve buenas prácticas en control de cambios, respaldos, accesos y continuidad operativa.</p><select name="i_7_5" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre metodologías y procesos"></textarea></div>
+        </section>
+
+        <!-- 9 -->
+        <section class="cat">
+          <h2>9. Seguimiento y cumplimiento</h2>
+          <div class="question"><p>Da seguimiento oportuno a tareas asignadas por la dirección.</p><select name="i_8_0" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene control sobre pendientes críticos del área de infraestructura.</p><select name="i_8_1" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Informa avances, bloqueos y riesgos antes de que se conviertan en problemas mayores.</p><select name="i_8_2" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Cumple compromisos o comunica oportunamente cuando existe algún impedimento.</p><select name="i_8_3" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Prioriza correctamente actividades urgentes, importantes y operativas.</p><select name="i_8_4" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene trazabilidad de acuerdos, responsables y fechas compromiso.</p><select name="i_8_5" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre seguimiento"></textarea></div>
+        </section>
+
+        <!-- 10 -->
+        <section class="cat">
+          <h2>10. Comunicación con la dirección</h2>
+          <div class="question"><p>Informa de manera clara el estado del área de infraestructura.</p><select name="i_9_0" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Presenta riesgos, necesidades y avances con lenguaje comprensible para la toma de decisiones.</p><select name="i_9_1" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escala oportunamente problemas críticos o situaciones que requieren apoyo directivo.</p><select name="i_9_2" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Diferencia asuntos operativos de asuntos estratégicos al comunicarse con la dirección.</p><select name="i_9_3" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene comunicación profesional, objetiva y basada en hechos.</p><select name="i_9_4" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Atiende instrucciones, prioridades y retroalimentación de la dirección con disposición.</p><select name="i_9_5" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre comunicación"></textarea></div>
+        </section>
+
+        <!-- 11 -->
+        <section class="cat">
+          <h2>11. Gestión operativa de infraestructura</h2>
+          <div class="question"><p>Da seguimiento a servicios críticos, servidores, redes, respaldos, almacenamiento y disponibilidad.</p><select name="i_10_0" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Atiende incidencias con sentido de urgencia y análisis de impacto.</p><select name="i_10_1" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica riesgos técnicos y propone acciones preventivas.</p><select name="i_10_2" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Verifica controles básicos sobre respaldos, accesos, monitoreo y continuidad.</p><select name="i_10_3" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Coordina actividades técnicas evitando afectar la operación del negocio.</p><select name="i_10_4" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Busca reducir recurrencia de incidentes mediante análisis y mejora de procesos.</p><select name="i_10_5" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre operación"></textarea></div>
+        </section>
+
+        <!-- 12 -->
+        <section class="cat">
+          <h2>12. Gestión de proveedores y contratos</h2>
+          <div class="question"><p>Conoce los contratos, SLAs y compromisos vigentes con proveedores de servicios TI.</p><select name="i_11_0" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento al cumplimiento de SLAs y escala incumplimientos de forma oportuna.</p><select name="i_11_1" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa con criterio técnico y económico nuevas propuestas o renovaciones de servicios.</p><select name="i_11_2" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Gestiona relaciones con proveedores de forma profesional y orientada a resultados.</p><select name="i_11_3" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión de proveedores"></textarea></div>
+        </section>
+
+        <!-- 13 -->
+        <section class="cat">
+          <h2>13. Cultura de mejora e innovación</h2>
+          <div class="question"><p>Promueve aprendizaje continuo y actualización técnica dentro del equipo.</p><select name="i_12_0" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la automatización de tareas operativas repetitivas o propensas a error.</p><select name="i_12_1" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Fomenta la adopción de mejores prácticas y estándares de la industria.</p><select name="i_12_2" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa y propone mejoras en herramientas, procesos y tecnologías del área.</p><select name="i_12_3" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce y valora las aportaciones del equipo en iniciativas de mejora.</p><select name="i_12_4" data-cat="12"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre cultura de mejora"></textarea></div>
+        </section>
+
+        <!-- Comentarios generales INFRA -->
+        <section class="cat">
+          <h2>Comentarios generales</h2>
+          <div class="comments-block">
+            <label for="i_fortalezas">Fortalezas observadas</label>
+            <textarea id="i_fortalezas" placeholder="Principales fortalezas del Líder de Infraestructura"></textarea><br><br>
+            <label for="i_oportunidades">Áreas de oportunidad</label>
+            <textarea id="i_oportunidades" placeholder="Aspectos a reforzar o mejorar"></textarea><br><br>
+            <label for="i_riesgos">Riesgos o puntos de atención</label>
+            <textarea id="i_riesgos" placeholder="Riesgos, bloqueos o temas críticos"></textarea>
+          </div>
+        </section>
+
+      </div><!-- /block-infra -->
+
+      <!-- ═══════════════════════════════════════════
+           BLOQUE DIRECTOR DE INNOVACIÓN (12 rubros)
+           ═══════════════════════════════════════════ -->
+      <div class="block-innov" id="block-innov">
+        <section class="cat innov"><h2>1. Claridad de visión e identidad del rol</h2>
+          <div class="question"><p>Ha definido y comunicado con claridad cuál es el propósito y alcance de su rol dentro de la organización.</p><select name="n_0_0" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Diferencia con precisión qué temas son de su responsabilidad directa versus cuáles son de soporte o influencia.</p><select name="n_0_1" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Alinea su agenda de trabajo a los objetivos estratégicos de la organización, no solo a iniciativas propias.</p><select name="n_0_2" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Entiende cómo su función genera valor medible para la organización.</p><select name="n_0_3" data-cat="0"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre claridad de visión e identidad del rol"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>2. Pensamiento estratégico e innovación</h2>
+          <div class="question"><p>Identifica oportunidades de innovación relevantes y factibles para el contexto de la organización.</p><select name="n_1_0" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Transforma ideas y tendencias en propuestas concretas con impacto potencial medible.</p><select name="n_1_1" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa iniciativas considerando viabilidad técnica, económica, operativa y estratégica.</p><select name="n_1_2" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Distingue entre tendencias pasajeras y tecnologías o enfoques con valor real para la organización.</p><select name="n_1_3" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Piensa en el mediano y largo plazo sin perder de vista las necesidades operativas del corto plazo.</p><select name="n_1_4" data-cat="1"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre pensamiento estratégico e innovación"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>3. Gestión de la innovación como proceso</h2>
+          <div class="question"><p>Establece o articula un proceso claro para gestionar iniciativas: ideación, prototipado, validación y escalamiento.</p><select name="n_2_0" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Define criterios de priorización y selección de iniciativas basados en valor, urgencia y recursos disponibles.</p><select name="n_2_1" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Da seguimiento formal a las iniciativas en curso: estado, responsables, riesgos y resultados esperados.</p><select name="n_2_2" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Sabe cuándo escalar, pivotar o detener una iniciativa sin sesgos de sobreinversión.</p><select name="n_2_3" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Documenta aprendizajes de iniciativas —exitosas o no— para enriquecer la cultura organizacional.</p><select name="n_2_4" data-cat="2"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión de la innovación como proceso"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>4. Influencia transversal y gestión del cambio</h2>
+          <div class="question"><p>Genera adhesión a iniciativas de innovación en áreas que no reportan directamente a su función.</p><select name="n_3_0" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica resistencias al cambio y las gestiona con estrategias de comunicación y participación.</p><select name="n_3_1" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Construye alianzas internas con las áreas clave para asegurar viabilidad e implementación de proyectos.</p><select name="n_3_2" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Adapta su discurso y enfoque según el interlocutor: dirección, equipos técnicos, áreas de negocio.</p><select name="n_3_3" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Celebra los avances del proceso de cambio e involucra a los actores en la construcción de soluciones.</p><select name="n_3_4" data-cat="3"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre influencia transversal y gestión del cambio"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>5. Liderazgo directivo e inteligencia emocional</h2>
+          <div class="question"><p>Inspira y moviliza a personas y equipos más allá de su autoridad formal.</p><select name="n_4_0" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene compostura y criterio en situaciones de ambigüedad, presión o incertidumbre estratégica.</p><select name="n_4_1" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escucha activamente perspectivas diversas antes de tomar posición o impulsar decisiones.</p><select name="n_4_2" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce sus errores con transparencia y los usa como oportunidades de aprendizaje organizacional.</p><select name="n_4_3" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Actúa como modelo de los valores de innovación, apertura y mejora continua que promueve.</p><select name="n_4_4" data-cat="4"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre liderazgo directivo e inteligencia emocional"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>6. Orientación a resultados y generación de valor</h2>
+          <div class="question"><p>Vincula las iniciativas a indicadores claros de negocio (eficiencia, ingresos, experiencia, riesgo).</p><select name="n_5_0" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Distingue entre actividad (hacer cosas) y resultados (generar impacto medible).</p><select name="n_5_1" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Propone métricas de seguimiento para cada iniciativa estratégica que lidera o impulsa.</p><select name="n_5_2" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa el retorno de las iniciativas en términos comprensibles para la dirección general.</p><select name="n_5_3" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Prioriza iniciativas de alto impacto sobre las de alto interés personal pero bajo valor organizacional.</p><select name="n_5_4" data-cat="5"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre orientación a resultados y generación de valor"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>7. Comunicación con dirección general y C-level</h2>
+          <div class="question"><p>Presenta propuestas y avances con narrativa ejecutiva clara: problema, solución, impacto, recursos y riesgos.</p><select name="n_6_0" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Traduce conceptos técnicos o innovadores en lenguaje estratégico comprensible para la dirección.</p><select name="n_6_1" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Escala oportunamente riesgos o decisiones que requieren respaldo o aval directivo.</p><select name="n_6_2" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Genera confianza en la dirección mediante consistencia entre lo que comunica y lo que entrega.</p><select name="n_6_3" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Solicita y aprovecha la retroalimentación de la dirección para ajustar el rumbo estratégico.</p><select name="n_6_4" data-cat="6"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre comunicación con dirección general y c-level"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>8. Gestión de ecosistema externo y alianzas</h2>
+          <div class="question"><p>Identifica y conecta con socios, proveedores, startups o instituciones que pueden aportar valor estratégico.</p><select name="n_7_0" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evalúa alianzas externas con criterio de alineación estratégica, riesgo y beneficio para la organización.</p><select name="n_7_1" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene relaciones activas con el ecosistema tecnológico, académico o emprendedor relevante.</p><select name="n_7_2" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Traslada inteligencia del mercado y tendencias externas a decisiones internas de la organización.</p><select name="n_7_3" data-cat="7"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión de ecosistema externo y alianzas"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>9. Cultura de innovación y desarrollo de talento</h2>
+          <div class="question"><p>Crea condiciones para que los equipos puedan experimentar, proponer y aprender sin miedo al error.</p><select name="n_8_0" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica y desarrolla talento con perfil innovador dentro de la organización.</p><select name="n_8_1" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Promueve espacios formales o informales para el intercambio de ideas y conocimiento entre áreas.</p><select name="n_8_2" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Reconoce y visibiliza las aportaciones innovadoras del equipo, sin atribuírselas.</p><select name="n_8_3" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Impulsa la formación y actualización continua en tecnologías emergentes, metodologías y tendencias.</p><select name="n_8_4" data-cat="8"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre cultura de innovación y desarrollo de talento"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>10. Gestión de presupuesto y recursos de innovación</h2>
+          <div class="question"><p>Justifica con criterio estratégico las inversiones en proyectos de innovación.</p><select name="n_9_0" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Administra el presupuesto a su cargo con transparencia, trazabilidad y orientación a resultados.</p><select name="n_9_1" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Optimiza recursos buscando modelos de bajo costo para experimentar antes de escalar.</p><select name="n_9_2" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Identifica fuentes alternativas de financiamiento para innovación (fondos, alianzas, apoyos externos).</p><select name="n_9_3" data-cat="9"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre gestión de presupuesto y recursos de innovación"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>11. Ética, responsabilidad y sostenibilidad de la innovación</h2>
+          <div class="question"><p>Considera el impacto ético, social y regulatorio de las iniciativas tecnológicas que impulsa.</p><select name="n_10_0" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Integra criterios de sostenibilidad y responsabilidad en la selección y ejecución de proyectos.</p><select name="n_10_1" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Comunica de forma transparente los riesgos y limitaciones de las tecnologías o enfoques que propone.</p><select name="n_10_2" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Evita sobreprometer resultados de innovación sin respaldo en evidencia o pruebas reales.</p><select name="n_10_3" data-cat="10"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre ética, responsabilidad y sostenibilidad de la innovación"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>12. Seguimiento, rendición de cuentas y aprendizaje</h2>
+          <div class="question"><p>Reporta periódicamente el estado de las iniciativas estratégicas con datos y evidencias concretas.</p><select name="n_11_0" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Documenta y comparte los aprendizajes derivados de proyectos para que la organización aprenda.</p><select name="n_11_1" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Cumple los compromisos adquiridos con la dirección y comunica proactivamente cuando hay desvíos.</p><select name="n_11_2" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Establece retrospectivas o revisiones periódicas para mejorar la forma de trabajar del área.</p><select name="n_11_3" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="question"><p>Mantiene visibilidad del portafolio de iniciativas: activas, en pausa, completadas y canceladas.</p><select name="n_11_4" data-cat="11"><option value="0">No evaluado</option><option value="4">Excelente</option><option value="3">Bueno</option><option value="2">Regular</option><option value="1">Requiere mejora</option></select></div>
+          <div class="comments-block"><label>Comentarios</label><textarea placeholder="Observaciones sobre seguimiento, rendición de cuentas y aprendizaje"></textarea></div>
+        </section>
+        <section class="cat innov"><h2>Comentarios generales</h2>
+          <div class="comments-block">
+            <label>Fortalezas observadas</label><textarea placeholder="Principales fortalezas del Director de Innovación"></textarea><br><br>
+            <label>Áreas de oportunidad</label><textarea placeholder="Aspectos a desarrollar o reforzar"></textarea><br><br>
+            <label>Riesgos o puntos de atención</label><textarea placeholder="Riesgos estratégicos o temas críticos"></textarea>
+          </div>
+        </section>
+      </div><!-- /block-innov -->
+
+
+      <div class="actions">
+        <button type="button" id="btnCalc" class="btn-infra" onclick="calcularResultado()">Calcular y registrar</button>
+        <button type="button" class="btn-sec" onclick="limpiarFormulario()">Limpiar</button>
+        <button type="button" class="btn-sec" onclick="window.print()">Imprimir / PDF</button>
+      </div>
+    </form>
+
+    <!-- RESULTADO LOCAL -->
+    <div id="localResult" class="local-result">
+      <h2>Resultado de esta evaluación</h2>
+      <p id="resumenEval"></p>
+      <div class="score-boxes">
+        <div class="score-card"><strong id="rPuntaje">—</strong>Puntaje total</div>
+        <div class="score-card"><strong id="rPromedio">—</strong>Promedio</div>
+        <div class="score-card"><strong id="rPorcentaje">—</strong>Porcentaje</div>
+      </div>
+      <div id="rNivel" class="level"></div>
+      <p id="rInterp"></p>
+      <table class="cat-table">
+        <thead><tr><th>Categoría</th><th>Promedio</th><th>%</th><th>Lectura</th></tr></thead>
+        <tbody id="rCatBody"></tbody>
+      </table>
+      <p style="margin-top:14px; font-size:13px; color:var(--muted)">✅ Evaluación registrada. Ve a <strong>Resultados consolidados</strong> para ver el acumulado.</p>
+    </div>
+
+  </main>
+</div>
+</div><!-- /tab-form -->
+
+<!-- ══ TAB RESULTADOS ══ -->
+<div id="tab-results" class="tab-panel">
+<div class="container">
+  <div class="panel-header results">
+    <h1>Resultados consolidados — Líderes DIT</h1>
+    <p>Puntaje acumulado de las evaluaciones anónimas registradas en esta sesión</p>
+  </div>
+  <main>
+    <div class="counter-bar">
+      <div class="counter-item"><span class="counter-dot dev"></span>Líder de Desarrollo: <strong id="cntDev">0</strong>&nbsp;/ 6</div>
+      <div class="counter-item"><span class="counter-dot infra"></span>Líder Infraestructura: <strong id="cntInfra">0</strong>&nbsp;/ 6</div>
+      <div class="counter-item"><span class="counter-dot innov"></span>Director Innovación: <strong id="cntInnov">0</strong>&nbsp;/ 6</div>
+      <div style="margin-left:auto"><button class="btn-sec" style="font-size:13px;padding:7px 14px" onclick="resetResultados()">🗑 Borrar todo</button></div>
+    </div>
+    <div id="resultsContent"><div class="no-data">Aún no hay evaluaciones registradas.<br>Completa el formulario y presiona <em>Calcular y registrar</em>.</div></div>
+    <div class="results-note">Los datos se almacenan en memoria de esta sesión. Imprime o guarda como PDF antes de cerrar el navegador.</div>
+  </main>
+</div>
+</div><!-- /tab-results -->
+
+<script>
+// ══════════ CATÁLOGOS (13 categorías por líder) ══════════
+const catsInnov = ["1. Claridad de visión e identidad del rol","2. Pensamiento estratégico e innovación","3. Gestión de la innovación como proceso","4. Influencia transversal y gestión del cambio","5. Liderazgo directivo e inteligencia emocional","6. Orientación a resultados y generación de valor","7. Comunicación con dirección general y C-level","8. Gestión de ecosistema externo y alianzas","9. Cultura de innovación y desarrollo de talento","10. Gestión de presupuesto y recursos de innovación","11. Ética, responsabilidad y sostenibilidad","12. Seguimiento, rendición de cuentas y aprendizaje"];
+const catsDev = [
+  "1. Adaptación a la organización","2. Habilidades blandas y liderazgo",
+  "3. Inteligencia emocional y autogestión","4. Gestión del equipo a cargo",
+  "5. Conocimientos técnicos generales","6. Gestión de calidad y pruebas",
+  "7. Estrategia y visión del área","8. Metodologías, orden y procesos",
+  "9. Seguimiento y cumplimiento","10. Comunicación con la dirección",
+  "11. Gestión operativa de proyectos","12. Relación con otras áreas y clientes internos",
+  "13. Cultura de ingeniería e innovación"
+];
+const catsInfra = [
+  "1. Adaptación a la organización","2. Habilidades blandas y liderazgo",
+  "3. Inteligencia emocional y autogestión","4. Gestión del equipo a cargo",
+  "5. Conocimientos técnicos generales","6. Seguridad y cumplimiento",
+  "7. Estrategia y visión del área","8. Metodologías, orden y procesos",
+  "9. Seguimiento y cumplimiento","10. Comunicación con la dirección",
+  "11. Gestión operativa de infraestructura","12. Gestión de proveedores y contratos",
+  "13. Cultura de mejora e innovación"
+];
+
+const acumulado = { dev:{evaluaciones:[]}, infra:{evaluaciones:[]}, innov:{evaluaciones:[]} };
+
+// ══════════ TABS ══════════
+function switchTab(t, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  btn.classList.add('active');
+  if (t === 'results') renderResultados();
+}
+
+// ══════════ SELECTOR EVALUADO ══════════
+function onEvaluadoChange() {
+  const v=document.getElementById('evaluado').value;
+  const h=document.getElementById('panelHeader'),ti=document.getElementById('panelTitle');
+  const sub=document.getElementById('panelSub'),intro=document.getElementById('introBox');
+  const nota=document.getElementById('notaDirector'),btn=document.getElementById('btnCalc');
+  const sel=document.getElementById('evaluado');
+  document.getElementById('localResult').style.display='none';
+  ['block-dev','block-infra','block-innov'].forEach(id=>document.getElementById(id).style.display='none');
+  nota.style.display='none';
+  if(v==='dev'){
+    h.className='panel-header dev';ti.textContent='Evaluación Anónima — Líder de Desarrollo';
+    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    intro.className='intro dev';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Líder de Desarrollo (13 rubros).';
+    btn.className='btn-dev';sel.className='ev-select dev-sel';
+    document.getElementById('block-dev').style.display='block';
+  } else if(v==='infra'){
+    h.className='panel-header infra';ti.textContent='Evaluación Anónima — Líder de Infraestructura';
+    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    intro.className='intro';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Líder de Infraestructura (13 rubros).';
+    btn.className='btn-infra';sel.className='ev-select infra-sel';
+    document.getElementById('block-infra').style.display='block';
+  } else if(v==='innov'){
+    h.className='panel-header innov';ti.textContent='Evaluación Anónima — Director de Innovación';
+    sub.textContent='Perfil directivo estratégico · Periodo sugerido: primeros 3 meses en la organización';
+    intro.className='intro innov';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del Director de Innovación — enfoque estratégico, transversal y de generación de valor (12 rubros).';
+    nota.style.display='block';btn.className='btn-innov';sel.className='ev-select innov-sel';
+    document.getElementById('block-innov').style.display='block';
+  } else {
+    h.className='panel-header infra';ti.textContent='Evaluación Anónima — DIT';
+    sub.textContent='Periodo sugerido: primeros 2 meses en la organización';
+    intro.className='intro';intro.innerHTML='<strong>Objetivo:</strong> evaluar el desempeño inicial del evaluado.';
+    btn.className='btn-infra';sel.className='ev-select';
+  }
+}
+
+// ══════════ LECTURA ══════════
+function lectura(p) {
+  if (p >= 3.5) return "Sobresaliente";
+  if (p >= 2.8) return "Bueno";
+  if (p >= 2.0) return "Aceptable con seguimiento";
+  if (p > 0)   return "Requiere mejora";
+  return "Sin datos";
+}
+function nc(p) {
+  if (p >= 2.8) return "success";
+  if (p >= 2.0) return "warning";
+  return "danger";
+}
+
+// ══════════ CALCULAR ══════════
+function calcularResultado() {
+  const tipo = document.getElementById('evaluado').value;
+  if (!tipo) { alert('Seleccione el líder a evaluar.'); return; }
+
+  const prefix = tipo==='dev'?'d_':tipo==='infra'?'i_':'n_';
+  const cats   = tipo==='dev'?catsDev:tipo==='infra'?catsInfra:catsInnov;
+  const numCats = cats.length; // 13
+
+  const acumCat = Array.from({length: numCats}, () => ({total:0, ev:0}));
+  let total=0, evaluadas=0, maximo=0;
+
+  document.querySelectorAll(`select[name^="${prefix}"]`).forEach(s => {
+    const v = Number(s.value);
+    const c = Number(s.dataset.cat);
+    if (v > 0) { total+=v; evaluadas++; maximo+=4; acumCat[c].total+=v; acumCat[c].ev++; }
+  });
+
+  if (evaluadas === 0) { alert('Evalúe al menos un criterio.'); return; }
+
+  const prom = total/evaluadas;
+  const pct  = (total/maximo)*100;
+  const niv  = lectura(prom);
+  const fecha = document.getElementById('fecha').value || new Date().toLocaleDateString('es-MX');
+
+  acumulado[tipo].evaluaciones.push({ total, evaluadas, maximo, prom, pct, acumCat, fecha });
+
+  // Mostrar resultado local
+  document.getElementById('localResult').style.display = 'block';
+  document.getElementById('rPuntaje').textContent   = `${total} / ${maximo}`;
+  document.getElementById('rPromedio').textContent  = prom.toFixed(2);
+  document.getElementById('rPorcentaje').textContent= `${pct.toFixed(1)}%`;
+  document.getElementById('resumenEval').innerHTML  =
+    `<strong>Evaluado:</strong> Líder de ${tipo==='dev'?'Desarrollo':'Infraestructura'} &nbsp;|&nbsp;
+     <strong>Fecha:</strong> ${fecha} &nbsp;|&nbsp;
+     <strong>Evaluación n.°</strong> ${acumulado[tipo].evaluaciones.length}`;
+
+  const nd = document.getElementById('rNivel');
+  nd.textContent = `Resultado: ${niv}`;
+  nd.className = 'level ' + nc(prom);
+
+  const interps = {
+    "Sobresaliente": "Integración sobresaliente, buen liderazgo y control operativo desde el inicio.",
+    "Bueno": "Desempeño bueno y consistente con una etapa temprana de adaptación.",
+    "Aceptable con seguimiento": "Desempeño aceptable, requiere acompañamiento cercano.",
+    "Requiere mejora": "Se observan debilidades relevantes que requieren atención inmediata."
+  };
+  document.getElementById('rInterp').textContent = interps[niv] || '';
+
+  const tbody = document.getElementById('rCatBody');
+  tbody.innerHTML = '';
+  acumCat.forEach((c,i) => {
+    const p = c.ev>0 ? c.total/c.ev : 0;
+    const pc = c.ev>0 ? (c.total/(c.ev*4))*100 : 0;
+    tbody.innerHTML += `<tr><td>${cats[i]}</td>
+      <td>${c.ev>0?p.toFixed(2):'Sin evaluar'}</td>
+      <td>${c.ev>0?pc.toFixed(1)+'%':'—'}</td>
+      <td>${lectura(p)}</td></tr>`;
+  });
+
+  document.getElementById('cntDev').textContent=acumulado.dev.evaluaciones.length;
+  document.getElementById('cntInfra').textContent=acumulado.infra.evaluaciones.length;
+  document.getElementById('cntInnov').textContent=acumulado.innov.evaluaciones.length;
+  document.getElementById('localResult').scrollIntoView({behavior:'smooth'});
+}
+
+// ══════════ RENDER CONSOLIDADO ══════════
+function renderResultados() {
+  const el = document.getElementById('resultsContent');
+  const nd = acumulado.dev.evaluaciones.length;
+  const ni = acumulado.infra.evaluaciones.length;
+  document.getElementById('cntDev').textContent   = nd;
+  document.getElementById('cntInfra').textContent = ni;
+  if (nd===0 && ni===0) {
+    el.innerHTML = '<div class="no-data">Aún no hay evaluaciones registradas.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="results-grid">${cardHTML('dev','Líder de Desarrollo',catsDev,6)}${cardHTML('infra','Líder de Infraestructura',catsInfra,6)}${cardHTML('innov','Director de Innovación',catsInnov,6)}</div>`;
+}
+
+function cardHTML(tipo, label, cats) {
+  const evals = acumulado[tipo].evaluaciones;
+  if (!evals.length) return `<div class="leader-card ${tipo}"><h2>${label}</h2><div class="no-data" style="padding:24px 0">Sin evaluaciones aún.</div></div>`;
+
+  const tot  = evals.reduce((s,e)=>s+e.total,0);
+  const ev   = evals.reduce((s,e)=>s+e.evaluadas,0);
+  const mx   = evals.reduce((s,e)=>s+e.maximo,0);
+  const prom = tot/ev;
+  const pct  = (tot/mx)*100;
+  const niv  = lectura(prom);
+  const colors = {success:'var(--success)',warning:'var(--warning)',danger:'var(--danger)'};
+  const col = colors[nc(prom)];
+
+  const catAcum = cats.map((_,ci)=>{
+    let t=0,e=0; evals.forEach(ev=>{ t+=ev.acumCat[ci].total; e+=ev.acumCat[ci].ev; }); return {t,e};
+  });
+
+  const rows = catAcum.map((c,i)=>{
+    const p = c.e>0 ? c.t/c.e : 0;
+    const color = p>=2.8?'var(--success)':p>=2.0?'var(--warning)':'var(--danger)';
+    return `<div class="cat-mini-row">
+      <span>${cats[i].replace(/^\d+\.\s*/,'')}</span>
+      <span style="font-weight:700;color:${c.e>0?color:'#999'}">${c.e>0?p.toFixed(2):'—'}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="leader-card ${tipo}">
+    <h2>${label}</h2>
+    <span class="badge ${tipo}">${evals.length} evaluación${evals.length!==1?'es':''}</span>
+    <div class="big-score ${tipo}">
+      <div class="num">${pct.toFixed(0)}%</div>
+      <div class="sublabel">Puntaje: ${tot}/${mx} &nbsp;|&nbsp; Promedio: ${prom.toFixed(2)}</div>
+      <div class="nivel" style="color:${col}">${niv}</div>
+    </div>
+    <div class="prog-bar-wrap"><div class="prog-bar ${tipo}" style="width:${pct.toFixed(1)}%"></div></div>
+    <div style="margin-top:10px">${rows}</div>
+  </div>`;
+}
+
+function resetResultados() {
+  if (!confirm('¿Borrar todos los resultados acumulados?')) return;
+  acumulado.dev.evaluaciones=[];acumulado.infra.evaluaciones=[];acumulado.innov.evaluaciones=[];
+  renderResultados();
+  ['cntDev','cntInfra','cntInnov'].forEach(id=>document.getElementById(id).textContent='0');
+}
+
+function limpiarFormulario() {
+  if (!confirm('¿Limpiar el formulario actual?')) return;
+  document.getElementById('evalForm').reset();
+  document.getElementById('periodo').value = 'Primeros 2 meses en la organización';
+  document.getElementById('localResult').style.display = 'none';
+  onEvaluadoChange();
+}
+</script>
+</body>
+</html>
