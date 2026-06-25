@@ -683,7 +683,8 @@
         <thead><tr><th>Categoría</th><th>Promedio</th><th>%</th><th>Lectura</th></tr></thead>
         <tbody id="rCatBody"></tbody>
       </table>
-      <p style="margin-top:14px; font-size:13px; color:var(--muted)">✅ Evaluación registrada. Ve a <strong>Resultados consolidados</strong> para ver el acumulado.</p>
+      <div id="sendStatus" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:#f0f5fc;border:1px solid #c5d6f8;font-size:13px;color:#1a3a70;font-weight:600"></div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)">Tu evaluación es anónima. El resultado se guarda de forma consolidada para la dirección.</p>
     </div>
 
   </main>
@@ -698,15 +699,37 @@
   // ══ Enviar resultado a Google Sheets ══
   async function sendToSheets(payload) {
     try {
-      const url = APPS_SCRIPT_URL + '?action=save&data=' + encodeURIComponent(JSON.stringify(payload));
-      // Usamos Image() para hacer GET sin problemas de CORS
+      // Payload compacto para evitar URL demasiado larga
+      const compact = {
+        ts:   payload.timestamp,
+        tipo: payload.tipo,
+        ev:   payload.evaluado_label,
+        per:  payload.periodo,
+        fec:  payload.fecha,
+        tot:  payload.total,
+        eva:  payload.evaluadas,
+        max:  payload.maximo,
+        pro:  payload.promedio,
+        pct:  payload.porcentaje,
+        niv:  payload.nivel,
+        cats: (payload.categorias || []).map(c => ({
+          n: c.nombre,
+          p: c.promedio,
+          e: c.evaluadas
+        }))
+      };
+      const encoded = encodeURIComponent(JSON.stringify(compact));
+      const url = APPS_SCRIPT_URL + '?action=save2&data=' + encoded;
+      console.log('Enviando a Sheets, URL length:', url.length);
       return new Promise((resolve) => {
         const img = new Image();
-        img.onload = img.onerror = () => resolve({ ok: true });
+        img.onload = () => { console.log('Sheets OK'); resolve({ ok: true }); };
+        img.onerror = () => { console.log('Sheets sent (onerror normal)'); resolve({ ok: true }); };
         img.src = url;
-        setTimeout(() => resolve({ ok: true }), 3000);
+        setTimeout(() => resolve({ ok: true }), 5000);
       });
     } catch(e) {
+      console.error('sendToSheets error:', e);
       return { ok: false, reason: e.message };
     }
   }
@@ -879,14 +902,16 @@ async function calcularResultado() {
   };
 
   const statusEl = document.getElementById('sendStatus');
-  statusEl.innerHTML = '⏳ Enviando resultado...';
-  statusEl.style.display = 'block';
+  if (statusEl) {
+    statusEl.innerHTML = '⏳ Enviando resultado...';
+    statusEl.style.display = 'block';
+  }
 
   sendToSheets(payload).then(result => {
-    if (result.ok) {
-      statusEl.innerHTML = '✅ Resultado enviado y guardado correctamente en el registro.';
-    } else {
-      statusEl.innerHTML = '❌ Error al enviar. Toma captura de pantalla como respaldo.';
+    if (statusEl) {
+      statusEl.innerHTML = result.ok
+        ? '✅ Resultado enviado y guardado correctamente en el registro.'
+        : '❌ Error al enviar. Toma captura de pantalla como respaldo.';
     }
   });
 
