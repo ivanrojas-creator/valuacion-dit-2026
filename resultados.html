@@ -288,7 +288,62 @@
     return 'r';
   }
 
-  function renderResults(data) {
+  // Convierte el array de filas crudas del Apps Script en el objeto que espera renderResults
+  function consolidar(rawData) {
+    const labels = {
+      dev:   'Líder de Desarrollo',
+      infra: 'Líder de Infraestructura',
+      innov: 'Director de Innovación'
+    };
+    const result = {};
+    ['dev','infra','innov'].forEach(key => {
+      const filas = rawData[key] || [];
+      const label = labels[key];
+      if (filas.length === 0) {
+        result[key] = { label, count: 0, pctGlobal: 0, promGlobal: 0, nivel: 'Sin datos', categorias: [] };
+        return;
+      }
+      // Promediar todas las filas por categoría
+      const catMap = {};
+      filas.forEach(fila => {
+        (fila.cats || []).forEach(c => {
+          if (!catMap[c.n]) catMap[c.n] = { nombre: c.n, total: 0, ev: 0 };
+          if (c.p != null) { catMap[c.n].total += c.p * c.e; catMap[c.n].ev += c.e; }
+        });
+      });
+      const categorias = Object.values(catMap).map(c => ({
+        nombre: c.nombre,
+        promedio: c.ev > 0 ? c.total / c.ev : null
+      }));
+      // Global
+      const totPct = filas.reduce((s, f) => s + (f.pct || 0), 0);
+      const totPro = filas.reduce((s, f) => s + (f.pro || 0), 0);
+      const pctGlobal = totPct / filas.length;
+      const promGlobal = totPro / filas.length;
+      const ultimaFecha = filas.map(f => f.fec).sort().pop();
+      result[key] = {
+        label,
+        count: filas.length,
+        pctGlobal,
+        promGlobal,
+        nivel: nivelDesde(promGlobal),
+        categorias,
+        ultimaFecha: ultimaFecha ? new Date(ultimaFecha).toLocaleDateString('es-MX') : null
+      };
+    });
+    return result;
+  }
+
+  function nivelDesde(p) {
+    if (p >= 3.5) return 'Sobresaliente';
+    if (p >= 2.8) return 'Bueno';
+    if (p >= 2.0) return 'Aceptable con seguimiento';
+    if (p >  0)   return 'Requiere mejora';
+    return 'Sin datos';
+  }
+
+  function renderResults(rawData) {
+    const data = consolidar(rawData);
     document.getElementById('lastUpdated').textContent =
       `Última actualización: ${new Date().toLocaleString('es-MX')}`;
 
