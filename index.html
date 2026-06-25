@@ -697,20 +697,30 @@
 
   // ══ Enviar resultado a Google Sheets ══
   async function sendToSheets(payload) {
-    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbypjUNKVOMxcp8eMLUFQ_qPcLozIe3Lklz01aeSqPVSQmWDkPFw2qzO6QccNSpWG4_Q/exec') {
-      console.warn('Apps Script URL not configured. Data saved locally only.');
-      return { ok: false, reason: 'not_configured' };
-    }
     try {
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      let iframe = document.getElementById('hidden_iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.name = 'hidden_iframe';
+        iframe.id = 'hidden_iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = APPS_SCRIPT_URL;
+      form.target = 'hidden_iframe';
+      form.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = JSON.stringify(payload);
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       return { ok: true };
     } catch(e) {
-      console.error('Error sending to Sheets:', e);
       return { ok: false, reason: e.message };
     }
   }
@@ -887,10 +897,8 @@ async function calcularResultado() {
   statusEl.style.display = 'block';
 
   sendToSheets(payload).then(result => {
-    if (result.ok || result.reason === 'not_configured') {
-      statusEl.innerHTML = result.reason === 'not_configured'
-        ? '⚠️ Configura la URL de Apps Script para guardar en Sheets.'
-        : '✅ Resultado enviado y guardado correctamente.';
+    if (result.ok) {
+      statusEl.innerHTML = '✅ Resultado enviado y guardado correctamente en el registro.';
     } else {
       statusEl.innerHTML = '❌ Error al enviar. Toma captura de pantalla como respaldo.';
     }
