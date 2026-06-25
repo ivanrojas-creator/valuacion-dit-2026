@@ -697,42 +697,41 @@
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypjUNKVOMxcp8eMLUFQ_qPcLozIe3Lklz01aeSqPVSQmWDkPFw2qzO6QccNSpWG4_Q/exec';
 
   // ══ Enviar resultado a Google Sheets ══
-  async function sendToSheets(payload) {
-    try {
-      // Payload compacto para evitar URL demasiado larga
-      const compact = {
-        ts:   payload.timestamp,
-        tipo: payload.tipo,
-        ev:   payload.evaluado_label,
-        per:  payload.periodo,
-        fec:  payload.fecha,
-        tot:  payload.total,
-        eva:  payload.evaluadas,
-        max:  payload.maximo,
-        pro:  payload.promedio,
-        pct:  payload.porcentaje,
-        niv:  payload.nivel,
-        cats: (payload.categorias || []).map(c => ({
-          n: c.nombre,
-          p: c.promedio,
-          e: c.evaluadas
-        }))
-      };
-      const encoded = encodeURIComponent(JSON.stringify(compact));
-      const url = APPS_SCRIPT_URL + '?action=save2&data=' + encoded;
-      console.log('Enviando a Sheets, URL length:', url.length);
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => { console.log('Sheets OK'); resolve({ ok: true }); };
-        img.onerror = () => { console.log('Sheets sent (onerror normal)'); resolve({ ok: true }); };
-        img.src = url;
-        setTimeout(() => resolve({ ok: true }), 5000);
-      });
-    } catch(e) {
-      console.error('sendToSheets error:', e);
-      return { ok: false, reason: e.message };
-    }
+ 
+async function sendToSheets(payload) {
+  try {
+    const compact = {
+      ts:   payload.timestamp,
+      tipo: payload.tipo,
+      ev:   payload.evaluado_label,
+      per:  payload.periodo,
+      fec:  payload.fecha,
+      tot:  payload.total,
+      eva:  payload.evaluadas,
+      max:  payload.maximo,
+      pro:  payload.promedio,
+      pct:  payload.porcentaje,
+      niv:  payload.nivel,
+      cats: (payload.categorias || []).map(c => ({
+        n: c.nombre,
+        p: c.promedio,
+        e: c.evaluadas
+      }))
+    };
+
+    const encoded = encodeURIComponent(JSON.stringify(compact));
+    const url = APPS_SCRIPT_URL + '?action=save2&data=' + encoded;
+    console.log('Enviando a Sheets, URL length:', url.length);
+
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+    console.log('Sheets OK (no-cors)');
+    return { ok: true };
+
+  } catch(e) {
+    console.error('sendToSheets error:', e);
+    return { ok: false, reason: e.message };
   }
+}
 
 
 // ══════════ CATÁLOGOS (13 categorías por líder) ══════════

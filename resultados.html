@@ -191,8 +191,8 @@
 </div>
 
 <script>
-  // ══ CONFIGURACIÓN — misma URL del Apps Script ══
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec';
+  // ══ CONFIGURACIÓN — URL del Apps Script ══
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypjUNKVOMxcp8eMLUFQ_qPcLozIe3Lklz01aeSqPVSQmWDkPFw2qzO6QccNSpWG4_Q/exec';
   const PASSWORD_KEY    = 'dit_pwd_2026';
 
   // ── Login ─────────────────────────────────────────────────────────────────
@@ -212,22 +212,16 @@
   }
 
   async function verifyAndLoad(pwd) {
-    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec') {
-      // Modo demo sin backend
-      document.getElementById('loginError').textContent = 'Configura la URL del Apps Script primero.';
-      document.getElementById('loginError').style.display = 'block';
-      return;
-    }
     try {
-      const url = `${APPS_SCRIPT_URL}?action=results&pwd=${encodeURIComponent(pwd)}`;
+      const url = `${APPS_SCRIPT_URL}?action=getResults&pwd=${encodeURIComponent(pwd)}`;
       const res = await fetch(url);
       const json = await res.json();
-      if (json.status === 'ok') {
+      if (json.ok === true) {
         sessionStorage.setItem(PASSWORD_KEY, pwd);
         showDashboard(pwd, json.data);
       } else {
         document.getElementById('loginError').style.display = 'block';
-        document.getElementById('loginError').textContent = 'Contraseña incorrecta.';
+        document.getElementById('loginError').textContent = json.error === 'unauthorized' ? 'Contraseña incorrecta.' : 'Error: ' + (json.error || 'desconocido');
       }
     } catch(e) {
       document.getElementById('loginError').style.display = 'block';
@@ -250,10 +244,10 @@
     document.getElementById('detailSection').innerHTML = '';
 
     try {
-      const url = `${APPS_SCRIPT_URL}?action=results&pwd=${encodeURIComponent(window._pwd)}`;
+      const url = `${APPS_SCRIPT_URL}?action=getResults&pwd=${encodeURIComponent(window._pwd)}`;
       const res  = await fetch(url);
       const json = await res.json();
-      if (json.status === 'ok') {
+      if (json.ok === true) {
         renderResults(json.data);
       } else {
         showError('No autorizado o error al obtener datos.');
