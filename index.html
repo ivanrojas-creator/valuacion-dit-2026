@@ -877,9 +877,9 @@ async function calcularResultado() {
       <td>${lectura(p)}</td></tr>`;
   });
 
-  document.getElementById('cntDev').textContent=acumulado.dev.evaluaciones.length;
-  document.getElementById('cntInfra').textContent=acumulado.infra.evaluaciones.length;
-  document.getElementById('cntInnov').textContent=acumulado.innov.evaluaciones.length;
+  if(document.getElementById('cntDev')) document.getElementById('cntDev').textContent=acumulado.dev.evaluaciones.length;
+  if(document.getElementById('cntInfra')) document.getElementById('cntInfra').textContent=acumulado.infra.evaluaciones.length;
+  if(document.getElementById('cntInnov')) document.getElementById('cntInnov').textContent=acumulado.innov.evaluaciones.length;
   // Enviar a Google Sheets
   const payload = {
     timestamp: new Date().toISOString(),
