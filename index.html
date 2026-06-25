@@ -693,11 +693,11 @@
 
 <script>
   // ══ CONFIGURACIÓN — pega aquí la URL de tu Apps Script Web App ══
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypjUNKVOMxcp8eMLUFQ_qPcLozIe3Lklz01aeSqPVSQmWDkPFw2qzO6QccNSpWG4_Q/exec';
 
   // ══ Enviar resultado a Google Sheets ══
   async function sendToSheets(payload) {
-    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzbVEi0a12U9VQpJyjCQi_FuFdldj1F1qKOJ9aMcln7UNwko_HsSRiZ0Hb8Ejl_ntB1/exec') {
+    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbypjUNKVOMxcp8eMLUFQ_qPcLozIe3Lklz01aeSqPVSQmWDkPFw2qzO6QccNSpWG4_Q/exec') {
       console.warn('Apps Script URL not configured. Data saved locally only.');
       return { ok: false, reason: 'not_configured' };
     }
