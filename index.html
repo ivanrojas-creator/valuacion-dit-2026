@@ -68,9 +68,14 @@
     section.cat h2 { margin: 0; background: #f3f6fa; color: var(--primary); padding: 12px 18px; font-size: 15px; border-bottom: 1px solid var(--border); }
     section.cat.dev   h2 { color: var(--dev);  background: var(--dev-light); }
     section.cat.innov h2 { color: #5b1f8a; background: #f3eafc; }
-    .question { display: grid; grid-template-columns: 1fr 200px; gap: 12px; align-items: center; padding: 10px 18px; border-bottom: 1px solid #edf0f4; }
+    .question { display: grid; grid-template-columns: 1fr 200px; gap: 12px; align-items: center; padding: 10px 18px; border-bottom: 1px solid #edf0f4; transition: background .2s; }
     .question:last-child { border-bottom: 0; }
     .question p { margin: 0; font-size: 14px; }
+    .question.unanswered { background: #fff5f5; border-left: 4px solid #c62828; padding-left: 14px; border-radius: 4px; }
+    .question.unanswered p::before { content: '* '; color: #c62828; font-weight: 900; }
+    .question.unanswered select { border-color: #c62828 !important; background: #fff0f0; }
+    .validation-banner { display: none; background: #fde8e8; border: 1px solid #c62828; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; color: #c62828; font-weight: 700; font-size: 14px; }
+    .validation-banner.visible { display: block; }
     .comments-block { padding: 12px 18px; background: #fbfcfe; border-top: 1px solid var(--border); }
 
     /* ACTIONS */
@@ -662,6 +667,7 @@
 
 
       <div class="actions">
+        <div class="validation-banner" id="validationBanner">⚠️ Faltan <span id="validationCount"></span> pregunta(s) por contestar. Por favor responde las marcadas en rojo antes de continuar.</div>
         <button type="button" id="btnCalc" class="btn-infra" onclick="calcularResultado()">Calcular y registrar</button>
         <button type="button" class="btn-sec" onclick="limpiarFormulario()">Limpiar</button>
         <button type="button" class="btn-sec" onclick="window.print()">Imprimir / PDF</button>
@@ -768,6 +774,10 @@ function switchTab(t, btn) {
 
 // ══════════ SELECTOR EVALUADO ══════════
 function onEvaluadoChange() {
+  // Limpiar validación anterior
+  document.querySelectorAll('.question.unanswered').forEach(q => q.classList.remove('unanswered'));
+  const banner = document.getElementById('validationBanner');
+  if (banner) banner.classList.remove('visible');
   const v=document.getElementById('evaluado').value;
   const h=document.getElementById('panelHeader'),ti=document.getElementById('panelTitle');
   const sub=document.getElementById('panelSub'),intro=document.getElementById('introBox');
@@ -825,10 +835,32 @@ async function calcularResultado() {
   const cats   = tipo==='dev'?catsDev:tipo==='infra'?catsInfra:catsInnov;
   const numCats = cats.length; // 13
 
+  // ── Validación: marcar preguntas sin contestar ──
+  const allSelects = document.querySelectorAll(`select[name^="${prefix}"]`);
+  const unanswered = [];
+  allSelects.forEach(s => {
+    const q = s.closest('.question');
+    if (Number(s.value) === 0) {
+      q.classList.add('unanswered');
+      unanswered.push(q);
+    } else {
+      q.classList.remove('unanswered');
+    }
+  });
+  const banner = document.getElementById('validationBanner');
+  if (unanswered.length > 0) {
+    document.getElementById('validationCount').textContent = unanswered.length;
+    banner.classList.add('visible');
+    unanswered[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  banner.classList.remove('visible');
+  // ── Fin validación ──
+
   const acumCat = Array.from({length: numCats}, () => ({total:0, ev:0}));
   let total=0, evaluadas=0, maximo=0;
 
-  document.querySelectorAll(`select[name^="${prefix}"]`).forEach(s => {
+  allSelects.forEach(s => {
     const v = Number(s.value);
     const c = Number(s.dataset.cat);
     if (v > 0) { total+=v; evaluadas++; maximo+=4; acumCat[c].total+=v; acumCat[c].ev++; }
@@ -916,6 +948,21 @@ async function calcularResultado() {
 
   document.getElementById('localResult').scrollIntoView({behavior:'smooth'});
 }
+
+// ── Auto-limpiar marca al contestar pregunta ──
+document.addEventListener('change', function(e) {
+  if (e.target.matches('select[name]') && !e.target.id) {
+    if (Number(e.target.value) > 0) {
+      const q = e.target.closest('.question');
+      if (q) q.classList.remove('unanswered');
+      // Si ya no hay preguntas sin contestar, ocultar banner
+      const banner = document.getElementById('validationBanner');
+      if (banner && document.querySelectorAll('.question.unanswered').length === 0) {
+        banner.classList.remove('visible');
+      }
+    }
+  }
+});
 
 // ══════════ RENDER CONSOLIDADO ══════════
 function renderResultados() {
